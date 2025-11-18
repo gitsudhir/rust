@@ -1,0 +1,29 @@
+[package]
+name = "esp32-wifi-project"
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2021"
+resolver = "2"
+
+[[bin]]
+name = "esp32-wifi-project"
+harness = false
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true
+opt-level = "z"
+
+[features]
+default = []
+
+[dependencies]
+log = "0.4"
+esp-idf-svc = "0.51"
+embedded-svc = "0.28"
+esp-idf-hal = "0.45"
+
+[build-dependencies]
+embuild = "0.33"
