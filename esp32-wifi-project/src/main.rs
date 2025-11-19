@@ -122,7 +122,8 @@ impl Max7219MatrixDriver {
             let mut byte_data = 0u8;
             for (col_index, &bit) in row_data.iter().enumerate() {
                 if bit != 0 {
-                    byte_data |= 1 << col_index;
+                    // Reverse the bit order to correct mirroring issue
+                    byte_data |= 1 << (7 - col_index);
                 }
             }
             self.display_row((row_index + 1) as u8, byte_data)?;
@@ -132,24 +133,24 @@ impl Max7219MatrixDriver {
     
     fn get_char_pattern(ch: char) -> u8 {
         match ch {
-            'H' => 0b01011101,
-            'E' => 0b01111001,
-            'L' => 0b01001001,
+            'H' => 0b10111010,
+            'E' => 0b10011110,
+            'L' => 0b10010010,
             'O' => 0b00111100,
-            'W' => 0b01011101, // Same as H
-            'R' => 0b01111100,
-            'D' => 0b00111101,
-            '!' => 0b00010000,
+            'W' => 0b10111010, // Same as H
+            'R' => 0b00111110,
+            'D' => 0b10111100,
+            '!' => 0b00001000,
             '0' => 0b00111100,
             '1' => 0b00011000,
-            '2' => 0b01110110,
-            '3' => 0b01110011,
-            '4' => 0b01011001,
-            '5' => 0b01101011,
-            '6' => 0b01101111,
-            '7' => 0b01110000,
-            '8' => 0b01111111,
-            '9' => 0b01111011,
+            '2' => 0b01101110,
+            '3' => 0b11001110,
+            '4' => 0b10011010,
+            '5' => 0b11010110,
+            '6' => 0b11110110,
+            '7' => 0b00001110,
+            '8' => 0b11111110,
+            '9' => 0b11011110,
             _ => 0b00000000, // Space/default
         }
     }
@@ -160,7 +161,16 @@ impl Max7219MatrixDriver {
         
         for (i, &ch) in chars.iter().enumerate() {
             let pattern = Self::get_char_pattern(ch);
-            self.display_row((i + 1) as u8, pattern)?;
+            // Reverse bit order for each pattern to correct mirroring
+            let reversed_pattern = ((pattern & 0x01) << 7) |
+                                 ((pattern & 0x02) << 5) |
+                                 ((pattern & 0x04) << 3) |
+                                 ((pattern & 0x08) << 1) |
+                                 ((pattern & 0x10) >> 1) |
+                                 ((pattern & 0x20) >> 3) |
+                                 ((pattern & 0x40) >> 5) |
+                                 ((pattern & 0x80) >> 7);
+            self.display_row((i + 1) as u8, reversed_pattern)?;
         }
         
         // Clear remaining rows
