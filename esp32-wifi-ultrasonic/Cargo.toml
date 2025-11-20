@@ -1,0 +1,39 @@
+[package]
+name = "esp32-wifi-ultrasonic"
+version = "0.1.0"
+authors = ["Your Name <your.email@example.com>"]
+edition = "2021"
+resolver = "2"
+description = "ESP32 Ultrasonic sensor with WiFi connectivity and API integration"
+
+# Environment variables for configuration:
+# ULTRASONIC_API_ENDPOINT - API endpoint for ultrasonic data (default: http://sudhirkumar.in/api/ultrasonic)
+# ULTRASONIC_API_TIMEOUT - Request timeout in seconds (default: 10)
+# ULTRASONIC_API_MAX_RETRIES - Maximum retry attempts (default: 3)
+
+[[bin]]
+name = "esp32-wifi-ultrasonic"
+harness = false
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true
+opt-level = "z"
+
+[features]
+default = []
+
+[dependencies]
+log = "0.4"
+esp-idf-svc = "0.51"
+embedded-svc = "0.28"
+esp-idf-hal = "0.45"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+once_cell = "1.19"
+minreq = { version = "2.6", features = ["json-using-serde"] }
+
+[build-dependencies]
+embuild = "0.33"
