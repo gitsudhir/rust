@@ -2,10 +2,18 @@ use esp_idf_svc::hal::delay::Ets;
 use esp_idf_svc::hal::gpio::PinDriver;
 use esp_idf_svc::hal::peripherals::Peripherals;
 use esp_idf_svc::sys::EspError;
+use esp_idf_svc::eventloop::EspSystemEventLoop;
+use esp_idf_svc::http::server::{Configuration, EspHttpServer};
+use esp_idf_svc::http::Method;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
+use log::info;
 
-fn main() {
+mod wifi;
+
+fn main() -> anyhow::Result<()> {
     // It is necessary to call this function once. Otherwise, some patches to the runtime
-    // implemented by esp-idf-sys might not link properly. See https://github.com/esp-rs/esp-idf-template/issues/71
+    // implemented by esp-idf-sys might not link properly.
     esp_idf_svc::sys::link_patches();
 
     // Bind the log crate to the ESP Logging facilities
@@ -14,16 +22,72 @@ fn main() {
     log::info!("Hello, world!");
 
     // Initialize peripherals
-    let peripherals = Peripherals::take().unwrap();
+    let peripherals = Peripherals::take()?;
+    let sysloop = EspSystemEventLoop::take()?;
     
     // Configure GPIO pins for TM1637 (change these according to your wiring)
     // CLK connected to GPIO4, DIO connected to GPIO5
-    let mut clk = PinDriver::output(peripherals.pins.gpio4).unwrap();
-    let mut dio = PinDriver::output(peripherals.pins.gpio5).unwrap();
+    let mut clk = PinDriver::output(peripherals.pins.gpio4)?;
+    let mut dio = PinDriver::output(peripherals.pins.gpio5)?;
     
     // Initialize delay provider
     let mut delay = Ets;
-    
+
+    // Connect to Wi-Fi
+    // TODO: Replace with actual credentials or use a configuration file
+    let _wifi = wifi::wifi(
+        "Airtel_sudh_3277",
+        "Air@14803",
+        peripherals.modem,
+        sysloop,
+    )?;
+
+    // Start WebSocket Server
+    let mut server = EspHttpServer::new(&Configuration::default())?;
+
+    server.fn_handler("/ws", Method::Get, |request| {
+        let mut response = request.into_response(200, Some("OK"), &[])?;
+        response.write_all(b"WebSocket endpoint")?;
+        Ok(())
+    })?;
+
+    server.ws_handler("/ws", |ws| {
+        match ws {
+            esp_idf_svc::http::server::WsHandshake::Detect(_) => {
+                info!("WebSocket connection detected");
+                true
+            }
+            esp_idf_svc::http::server::WsHandshake::Accept(connection) => {
+                info!("WebSocket connection accepted");
+                // We can't really do much here other than accept
+            }
+            esp_idf_svc::http::server::WsHandshake::Close(_connection) => {
+                info!("WebSocket connection closed");
+            }
+            esp_idf_svc::http::server::WsHandshake::Handler(connection) => {
+                let msg = connection.recv();
+                 match msg {
+                    Ok(msg) => {
+                        match msg {
+                            esp_idf_svc::http::server::WsFrame::Text(text) => {
+                                info!("Received text: {}", text);
+                                // Echo back
+                                connection.send(esp_idf_svc::http::server::WsFrame::Text(format!("Echo: {}", text).into()))?;
+                            }
+                            esp_idf_svc::http::server::WsFrame::Binary(data) => {
+                                info!("Received binary data");
+                                connection.send(esp_idf_svc::http::server::WsFrame::Binary(data))?;
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(e) => info!("Error receiving message: {:?}", e),
+                }
+            }
+        }
+        Ok(())
+    })?;
+
     let mut count = 0;
     loop {
         std::thread::sleep(std::time::Duration::from_secs(1));
