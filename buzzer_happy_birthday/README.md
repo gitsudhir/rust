@@ -12,17 +12,20 @@ This project uses an ESP32 microcontroller with Rust to play the "Happy Birthday
 ## Hardware Requirements
 
 - ESP32 development board
-- Buzzer (active or passive)
+- Buzzer (TMB12A12 passive buzzer or similar)
 - Jumper wires
 - Breadboard (optional)
 
 ## Wiring Diagram
 
+For TMB12A12 passive buzzer:
+
 | ESP32 Pin | Buzzer Pin |
 |-----------|------------|
 | GPIO 15   | Signal     |
-| 3.3V      | +          |
 | GND       | -          |
+
+Note: The TMB12A12 is a passive buzzer and gets powered by the PWM signal, so it only needs to be connected to GPIO 15 and GND.
 
 ## Setup and Installation
 
@@ -98,11 +101,15 @@ let pin = peripherals.pins.gpio15; // Change gpio15 to your desired pin
 
 ## Notes
 
-- The code supports both active and passive buzzers
-- For passive buzzers, PWM generates the tones
-- For active buzzers, the frequency changes will still work but may be less noticeable
+- The code is optimized for passive buzzers like the TMB12A12
+- PWM generates the tones for the melody
 - The melody plays in a continuous loop
 - Adjust note durations by changing the millisecond values in the melody arrays
+- If sound is too quiet, the code uses 75% duty cycle for better volume. You can adjust this in the `play_tone` function by changing the line:
+  ```rust
+  driver.set_duty((driver.get_max_duty() * 3) / 4)?;
+  ```
+  Increase the multiplier (3) for louder sound or decrease it for quieter sound.
 
 ## Troubleshooting
 
