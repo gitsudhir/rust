@@ -1,14 +1,16 @@
-# ESP32 Rust Counter with TM1637 Display and Web UI
+# ESP32 Multi-Client Counter with TM1637 Display
 
-This is a Rust project for ESP32 that implements a counter application with a 4-digit 7-segment display and a real-time web interface.
+This is a Rust project for ESP32 that implements a counter application with a 4-digit 7-segment display and real-time web interface that supports multiple concurrent connections.
 
 ## Features
 
-- TM1637 4-digit 7-segment display showing a counter
-- WiFi connectivity
-- Real-time web UI with Server-Sent Events (SSE)
-- REST API for resetting the counter
-- Thread-safe counter implementation
+- ✅ TM1637 4-digit 7-segment display showing a counter
+- ✅ WiFi connectivity
+- ✅ Real-time web UI with Server-Sent Events (SSE)
+- ✅ Multi-client support - connect from multiple devices simultaneously
+- ✅ REST API for resetting the counter
+- ✅ Thread-safe counter implementation
+- ✅ Mobile-responsive web interface
 
 ## Hardware Requirements
 
@@ -32,8 +34,27 @@ GND      --> GND
 src/
 ├── main.rs      # Main application entry point
 ├── display.rs   # TM1637 display driver implementation
-└── web.rs       # Web server with SSE support
+├── web.rs       # Web server with SSE broadcast pattern
+└── wifi.rs      # WiFi connection module
 ```
+
+## Multi-Client SSE Implementation
+
+This project implements a **broadcast-style SSE system** that allows unlimited clients to connect simultaneously:
+
+### Key Features:
+- **Broadcast Pattern**: Each client gets its own communication channel
+- **Multi-Client Support**: Unlimited devices can connect at the same time
+- **Automatic Cleanup**: Disconnected clients are automatically removed
+- **Real-time Updates**: All clients receive updates simultaneously
+- **Client Count Display**: Shows how many devices are connected
+
+### Technical Implementation:
+1. Each SSE client connection gets a unique ID and dedicated channel
+2. Clients are stored in a thread-safe `Arc<Mutex<HashMap<usize, Sender<String>>>>`
+3. Messages are broadcast to all connected clients
+4. Failed/disconnected clients are automatically removed
+5. Real-time client count updates are sent to all clients
 
 ## Setup
 
@@ -85,8 +106,8 @@ Open a web browser and navigate to `http://[ESP32_IP_ADDRESS]` to access the web
 ### HTTP Endpoints
 
 - `GET /` - Returns the main HTML page
-- `GET /events` - SSE endpoint that emits counter values
-- `POST /reset` - Reset the counter to a specific value
+- `GET /events` - SSE endpoint that emits counter values to all connected clients
+- `POST /reset` - Reset the counter to a specific value (JSON payload)
 
 Example reset request:
 ```bash
@@ -95,20 +116,29 @@ curl -X POST http://[ESP32_IP_ADDRESS]/reset \
   -d '{"counter": 42}'
 ```
 
+## Testing Multi-Client Support
+
+1. Open the web interface on your laptop
+2. Open the web interface on your mobile device
+3. Open the web interface on a second mobile device or browser tab
+4. All devices should show the same counter value updating in real-time
+5. The "Connected clients" display should show the total number of connections
+6. Close one device's tab - the others should still work and show updated client count
+
 ## Implementation Details
 
 The project uses:
 - `esp-idf-svc` for ESP-IDF services
 - Custom TM1637 driver implementation using bit-banging
-- Server-Sent Events for real-time updates to web clients
+- Server-Sent Events with broadcast pattern for real-time updates
 - Thread-safe counter using `Arc<Mutex<i32>>`
+- Multi-producer, multi-consumer channels for client communication
 
-## About Async Implementation
+## Architecture
 
-While Embassy and async/await provide excellent capabilities for embedded systems, we've implemented a synchronous version that works reliably. The async version would require additional dependencies and careful handling of the critical-section crate conflicts.
+1. **Main Thread**: Updates the 7-segment display every 50ms
+2. **Counter Thread**: Increments the counter every 500ms and notifies all web clients
+3. **Web Server**: Handles HTTP requests and manages SSE client connections
+4. **SSE Broadcast System**: Sends updates to all connected clients simultaneously
 
-If you want to implement an async version in the future, you would need to:
-1. Add Embassy dependencies to Cargo.toml
-2. Use `#[embassy_executor::main]` as the entry point
-3. Implement async tasks for the counter and web server
-4. Use Embassy's mutex for shared state management
+This implementation follows the recommended broadcast pattern for multi-client SSE support, ensuring that any number of devices can connect and receive real-time updates simultaneously.

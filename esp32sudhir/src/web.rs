@@ -1,16 +1,15 @@
-//! Web server implementation with SSE support
+//! Web server implementation with SSE support using broadcast pattern
 use esp_idf_svc::http::server::{Configuration, EspHttpServer};
 use esp_idf_svc::http::Method;
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicUsize, Ordering};
 
 // Counter type alias
 pub type Counter = Arc<Mutex<i32>>;
 
-// Client tracking for SSE
+// Client tracking for SSE using broadcast pattern
 pub type Clients = Arc<Mutex<HashMap<usize, std::sync::mpsc::Sender<String>>>>;
-static CLIENT_ID: AtomicUsize = AtomicUsize::new(0);
+static CLIENT_ID_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// Start the HTTP server with all endpoints
 pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<EspHttpServer<'static>> {
@@ -117,6 +116,13 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
         .instructions li {
             margin: 8px 0;
         }
+        .connected-clients {
+            background-color: #fff3e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
         /* Mobile responsive design */
         @media (max-width: 768px) {
             body {
@@ -163,6 +169,10 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
         <h1>ESP32 Counter</h1>
         <div id="counter">0</div>
         
+        <div class="connected-clients">
+            Connected clients: <span id="client-count">0</span>
+        </div>
+        
         <form id="reset-form">
             <input type="number" id="reset-value" placeholder="New value" min="0">
             <button type="submit" id="reset-btn">Reset Counter</button>
@@ -175,7 +185,7 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
             <ul>
                 <li>The counter above updates automatically every 0.5 seconds</li>
                 <li>Enter a number and click "Reset Counter" to set a new value</li>
-                <li>Works on both desktop and mobile devices</li>
+                <li>Works on multiple devices simultaneously</li>
                 <li>Connection status is shown below the counter</li>
             </ul>
         </div>
@@ -185,6 +195,7 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
         // Connect to SSE endpoint
         const counterElement = document.getElementById('counter');
         const statusElement = document.getElementById('status');
+        const clientCountElement = document.getElementById('client-count');
         
         function connectSSE() {
             const eventSource = new EventSource('/events');
@@ -195,7 +206,13 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
             };
             
             eventSource.onmessage = function(event) {
-                counterElement.textContent = event.data;
+                // Check if this is a client count update or counter update
+                if (event.data.startsWith('clients:')) {
+                    const clientCount = event.data.split(':')[1];
+                    clientCountElement.textContent = clientCount;
+                } else {
+                    counterElement.textContent = event.data;
+                }
             };
             
             eventSource.onerror = function() {
@@ -245,7 +262,7 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
         Ok::<(), anyhow::Error>(())
     })?;
     
-    // SSE endpoint - clone references for closure
+    // SSE endpoint - broadcast pattern implementation
     let sse_counter = counter.clone();
     let sse_clients = clients.clone();
     server.fn_handler("/events", Method::Get, move |request| -> anyhow::Result<()> {
@@ -261,7 +278,8 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
             .map_err(|e| anyhow::anyhow!("Failed to create SSE response: {:?}", e))?;
         
         // Generate unique client ID
-        let client_id = CLIENT_ID.fetch_add(1, Ordering::Relaxed);
+        let client_id = CLIENT_ID_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        log::info!("New SSE client connected. Client ID: {}", client_id);
         
         // Create channel for this client
         let (sender, receiver) = std::sync::mpsc::channel::<String>();
@@ -270,31 +288,41 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
         {
             let mut clients_map = sse_clients.lock().unwrap();
             clients_map.insert(client_id, sender);
+            log::info!("Total connected clients: {}", clients_map.len());
         }
-        
-        // Remove client when connection closes (cleanup)
-        let cleanup_clients = sse_clients.clone();
-        let cleanup_id = client_id;
         
         // Send initial value
         let current_value = *sse_counter.lock().unwrap();
         let initial_message = format!("data: {}\n\n", current_value);
         if let Err(e) = response.write(initial_message.as_bytes()) {
-            log::error!("Failed to send initial SSE message: {:?}", e);
+            log::error!("Failed to send initial SSE message to client {}: {:?}", client_id, e);
             // Remove client on error
-            let mut clients_map = cleanup_clients.lock().unwrap();
-            clients_map.remove(&cleanup_id);
+            let mut clients_map = sse_clients.lock().unwrap();
+            clients_map.remove(&client_id);
+            log::info!("Total connected clients after removal: {}", clients_map.len());
             return Ok(());
+        }
+        
+        // Send client count update to all clients
+        {
+            let clients_map = sse_clients.lock().unwrap();
+            let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+            for (_, sender) in clients_map.iter() {
+                let _ = sender.send(client_count_message.clone());
+            }
         }
         
         // Flush the response to ensure initial message is sent
         if let Err(e) = response.flush() {
-            log::error!("Failed to flush initial SSE response: {:?}", e);
+            log::error!("Failed to flush initial SSE response to client {}: {:?}", client_id, e);
             // Remove client on error
-            let mut clients_map = cleanup_clients.lock().unwrap();
-            clients_map.remove(&cleanup_id);
+            let mut clients_map = sse_clients.lock().unwrap();
+            clients_map.remove(&client_id);
+            log::info!("Total connected clients after removal: {}", clients_map.len());
             return Ok(());
         }
+        
+        log::info!("Client {} connected successfully", client_id);
         
         // Keep connection alive and send updates
         loop {
@@ -306,18 +334,30 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
                         Ok(_) => {
                             // Try to flush the response
                             if let Err(e) = response.flush() {
-                                log::error!("Failed to flush SSE response: {:?}", e);
+                                log::error!("Failed to flush SSE response to client {}: {:?}", client_id, e);
                                 // Remove client on error
-                                let mut clients_map = cleanup_clients.lock().unwrap();
-                                clients_map.remove(&cleanup_id);
+                                let mut clients_map = sse_clients.lock().unwrap();
+                                clients_map.remove(&client_id);
+                                log::info!("Total connected clients after removal: {}", clients_map.len());
+                                // Notify all clients of updated count
+                                let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+                                for (_, sender) in clients_map.iter() {
+                                    let _ = sender.send(client_count_message.clone());
+                                }
                                 break;
                             }
                         }
                         Err(e) => {
-                            log::error!("Failed to write SSE message: {:?}", e);
+                            log::error!("Failed to write SSE message to client {}: {:?}", client_id, e);
                             // Remove client on error
-                            let mut clients_map = cleanup_clients.lock().unwrap();
-                            clients_map.remove(&cleanup_id);
+                            let mut clients_map = sse_clients.lock().unwrap();
+                            clients_map.remove(&client_id);
+                            log::info!("Total connected clients after removal: {}", clients_map.len());
+                            // Notify all clients of updated count
+                            let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+                            for (_, sender) in clients_map.iter() {
+                                let _ = sender.send(client_count_message.clone());
+                            }
                             break;
                         }
                     }
@@ -327,18 +367,32 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
                     continue;
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                    log::info!("SSE client {} disconnected", cleanup_id);
+                    log::info!("SSE client {} disconnected", client_id);
                     // Remove client on disconnect
-                    let mut clients_map = cleanup_clients.lock().unwrap();
-                    clients_map.remove(&cleanup_id);
+                    let mut clients_map = sse_clients.lock().unwrap();
+                    clients_map.remove(&client_id);
+                    log::info!("Total connected clients after removal: {}", clients_map.len());
+                    // Notify all clients of updated count
+                    let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+                    for (_, sender) in clients_map.iter() {
+                        let _ = sender.send(client_count_message.clone());
+                    }
                     break;
                 }
             }
         }
         
         // Clean up client if not already removed
-        let mut clients_map = cleanup_clients.lock().unwrap();
-        clients_map.remove(&cleanup_id);
+        let mut clients_map = sse_clients.lock().unwrap();
+        if clients_map.contains_key(&client_id) {
+            clients_map.remove(&client_id);
+            log::info!("Client {} cleaned up. Total connected clients: {}", client_id, clients_map.len());
+            // Notify all clients of updated count
+            let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+            for (_, sender) in clients_map.iter() {
+                let _ = sender.send(client_count_message.clone());
+            }
+        }
         Ok(())
     })?;
     
@@ -372,39 +426,8 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
                 // Update counter
                 *reset_counter.lock().unwrap() = counter_value as i32;
                 
-                // Notify all SSE clients
-                let message = format!("data: {}\n\n", counter_value);
-                let clients_map = reset_clients.lock().unwrap();
-                let mut failed_clients = Vec::new();
-                
-                // Send to all clients and track failures
-                for (client_id, sender) in clients_map.iter() {
-                    if let Err(e) = sender.send(message.clone()) {
-                        log::error!("Failed to send to client {}: {:?}", client_id, e);
-                        failed_clients.push(*client_id);
-                    }
-                }
-                
-                // Remove failed clients
-                if !failed_clients.is_empty() {
-                    let mut clients_map = reset_clients.lock().unwrap();
-                    for client_id in failed_clients {
-                        clients_map.remove(&client_id);
-                    }
-                }
-                
-                // Send response
-                let mut response = request.into_response(200, Some("OK"), &[("Access-Control-Allow-Origin", "*")])
-                    .map_err(|e| {
-                        log::error!("Failed to create response: {:?}", e);
-                        e
-                    })?;
-                response.write(b"Counter reset successfully")
-                    .map_err(|e| {
-                        log::error!("Failed to write response: {:?}", e);
-                        e
-                    })?;
-                log::info!("Reset successful");
+                // Notify all SSE clients using broadcast pattern
+                broadcast_to_clients(&reset_clients, counter_value);
                 return Ok(());
             } else {
                 log::warn!("Missing counter field in JSON");
@@ -451,9 +474,9 @@ pub fn start_web_server(counter: Counter, clients: Clients) -> anyhow::Result<Es
     Ok(server)
 }
 
-/// Notify all SSE clients of a counter update
-pub fn notify_clients(clients: &Clients, counter: i32) {
-    let message = format!("data: {}\n\n", counter);
+/// Broadcast message to all SSE clients using the broadcast pattern
+fn broadcast_to_clients(clients: &Clients, value: i64) {
+    let message = format!("data: {}\n\n", value);
     let clients_map = clients.lock().unwrap();
     let mut failed_clients = Vec::new();
     
@@ -468,8 +491,20 @@ pub fn notify_clients(clients: &Clients, counter: i32) {
     // Remove failed clients
     if !failed_clients.is_empty() {
         let mut clients_map = clients.lock().unwrap();
-        for client_id in failed_clients {
-            clients_map.remove(&client_id);
+        for client_id in &failed_clients {
+            clients_map.remove(client_id);
+        }
+        log::info!("Removed {} failed clients during broadcast. Remaining clients: {}", failed_clients.len(), clients_map.len());
+        
+        // Notify remaining clients of updated count
+        let client_count_message = format!("data: clients:{}\n\n", clients_map.len());
+        for (_, sender) in clients_map.iter() {
+            let _ = sender.send(client_count_message.clone());
         }
     }
+}
+
+/// Notify all SSE clients of a counter update (for periodic updates)
+pub fn notify_clients(clients: &Clients, counter: i32) {
+    broadcast_to_clients(clients, counter as i64);
 }
