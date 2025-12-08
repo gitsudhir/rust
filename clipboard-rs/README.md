@@ -54,6 +54,52 @@ For detailed information about the application architecture and Tauri developmen
 - Click "Refresh History" to reload the clipboard history
 - Click "Clear History" to remove all saved clipboard items
 
+## macOS Installation Issues
+
+If you encounter the error "'clipboard-rs' is damaged and can't be opened. You should move it to the Bin," this is due to macOS Gatekeeper security features. Here are several solutions:
+
+### Solution 1: Bypass Gatekeeper (Quick Fix)
+Try running this command in Terminal:
+```bash
+xattr -d com.apple.quarantine /Applications/clipboard-rs.app
+```
+
+Or if the app is in your Downloads folder:
+```bash
+xattr -d com.apple.quarantine ~/Downloads/clipboard-rs.app
+```
+
+### Solution 2: Right-click Open Method
+1. Navigate to the app in Finder
+2. Right-click (or Control-click) on the app
+3. Select "Open" from the context menu
+4. Click "Open" in the dialog that appears
+5. The app should now open normally
+
+### Solution 3: Codesign Command
+If the above methods don't work, try signing the app:
+```bash
+codesign --force --deep --sign - /Applications/clipboard-rs.app
+```
+
+### Solution 4: Developer Signing (Production)
+For a permanent solution, join the Apple Developer Program and obtain a Developer ID certificate. Update the Tauri configuration with your signing identity:
+```json
+"macOS": {
+  "signingIdentity": "Developer ID Application: Your Name (TEAMID)",
+  "providerShortName": "TEAMID"
+}
+```
+
+### Solution 5: Disable Gatekeeper Temporarily (Not Recommended for Regular Use)
+```bash
+# Disable (use only for testing)
+sudo spctl --master-disable
+
+# Re-enable after testing
+sudo spctl --master-enable
+```
+
 ## Project Structure
 
 - `src/` - Frontend React components and logic
