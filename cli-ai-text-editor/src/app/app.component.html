@@ -11,6 +11,21 @@
   </div>
   <p>Click on the logos to learn more about the frameworks</p>
 
+  <div class="cli-info" *ngIf="!cliError">
+    <h2>CLI Information</h2>
+    <pre>{{ cliInfo }}</pre>
+  </div>
+
+  <div class="file-content" *ngIf="fileContent">
+    <h2>File Content</h2>
+    <pre>{{ fileContent }}</pre>
+  </div>
+
+  <div class="cli-error" *ngIf="cliError">
+    <h2>CLI Error</h2>
+    <p>{{ cliError }}</p>
+  </div>
+
   <form class="row" (submit)="greet($event, greetInput.value)">
     <input #greetInput id="greet-input" placeholder="Enter a name..." />
     <button type="submit">Greet</button>

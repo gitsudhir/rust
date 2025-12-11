@@ -1,3 +1,66 @@
+.cli-info {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: left;
+}
+
+.cli-info h2 {
+  margin-top: 0;
+}
+
+.cli-info pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #eee;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.file-content {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: left;
+}
+
+.file-content h2 {
+  margin-top: 0;
+}
+
+.file-content pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #eee;
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.cli-error {
+  margin: 20px 0;
+  padding: 15px;
+  border: 1px solid #ff0000;
+  border-radius: 8px;
+  background-color: #ffe6e6;
+  text-align: left;
+  color: #cc0000;
+}
+
+.cli-error h2 {
+  margin-top: 0;
+  color: #cc0000;
+}
+
 .logo.angular:hover {
   filter: drop-shadow(0 0 2em #e32727);
 }
@@ -91,22 +154,83 @@ button {
   margin-right: 5px;
 }
 
+/* Dark theme styles */
+.dark-theme {
+  color: #f6f6f6;
+  background-color: #2f2f2f;
+}
+
+.dark-theme a:hover {
+  color: #24c8db;
+}
+
+.dark-theme input,
+.dark-theme button {
+  color: #ffffff;
+  background-color: #0f0f0f98;
+}
+
+.dark-theme button:active {
+  background-color: #0f0f0f69;
+}
+
+.dark-theme .cli-info,
+.dark-theme .file-content {
+  background-color: #3a3a3a;
+}
+
+.dark-theme .cli-info pre,
+.dark-theme .file-content pre {
+  background-color: #2d2d2d;
+}
+
+.dark-theme .cli-error {
+  border: 1px solid #ff3333;
+  background-color: #4d2626;
+  color: #ff9999;
+}
+
+.dark-theme .cli-error h2 {
+  color: #ff9999;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.dark-theme) {
     color: #f6f6f6;
     background-color: #2f2f2f;
   }
 
-  a:hover {
+  :root:not(.dark-theme) a:hover {
     color: #24c8db;
   }
 
-  input,
-  button {
+  :root:not(.dark-theme) input,
+  :root:not(.dark-theme) button {
     color: #ffffff;
     background-color: #0f0f0f98;
   }
-  button:active {
+  
+  :root:not(.dark-theme) button:active {
     background-color: #0f0f0f69;
+  }
+  
+  :root:not(.dark-theme) .cli-info,
+  :root:not(.dark-theme) .file-content {
+    background-color: #3a3a3a;
+  }
+  
+  :root:not(.dark-theme) .cli-info pre,
+  :root:not(.dark-theme) .file-content pre {
+    background-color: #2d2d2d;
+  }
+  
+  :root:not(.dark-theme) .cli-error {
+    border: 1px solid #ff3333;
+    background-color: #4d2626;
+    color: #ff9999;
+  }
+  
+  :root:not(.dark-theme) .cli-error h2 {
+    color: #ff9999;
   }
 }

@@ -20,7 +20,9 @@
     "tslib": "^2.8.1",
     "zone.js": "~0.15.1",
     "@tauri-apps/api": "^2",
-    "@tauri-apps/plugin-opener": "^2"
+    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-cli": "^2",
+    "@tauri-apps/plugin-fs": "^2"
   },
   "devDependencies": {
     "@angular/build": "^20.1.4",
