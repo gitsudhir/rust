@@ -31,5 +31,69 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "cli": {
+      "description": "AIEdit - A desktop text editor with CLI capabilities",
+      "longDescription": "A powerful text editor with artificial intelligence features that can be controlled via command-line interface",
+      "args": [
+        {
+          "name": "file",
+          "index": 1,
+          "takesValue": true,
+          "description": "The file to open in the editor"
+        },
+        {
+          "name": "input",
+          "short": "i",
+          "takesValue": true,
+          "description": "The input file path for read operations"
+        },
+        {
+          "name": "output",
+          "short": "o",
+          "takesValue": true,
+          "description": "The output file path for save operations"
+        },
+        {
+          "name": "verbose",
+          "short": "v",
+          "description": "Enable verbose logging for debugging purposes"
+        },
+        {
+          "name": "theme",
+          "short": "t",
+          "takesValue": true,
+          "description": "Set the editor theme (light/dark)",
+          "possibleValues": ["light", "dark"]
+        }
+      ],
+      "subcommands": {
+        "edit": {
+          "description": "Edit a file",
+          "args": [
+            {
+              "name": "file",
+              "index": 1,
+              "takesValue": true,
+              "required": true,
+              "description": "The file to edit"
+            }
+          ]
+        },
+        "view": {
+          "description": "View a file (read-only mode)",
+          "args": [
+            {
+              "name": "file",
+              "index": 1,
+              "takesValue": true,
+              "required": true,
+              "description": "The file to view"
+            }
+          ]
+        }
+      }
+    }
   }
 }
