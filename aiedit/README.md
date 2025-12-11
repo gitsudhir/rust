@@ -1,7 +1,6 @@
-# Sudhir
 # AIEdit - Tauri + SvelteKit + TypeScript
 
-AIEdit is a cross-platform text editor built with Tauri, SvelteKit, and TypeScript. It provides a clean, modern interface for editing text files with native performance and CLI argument parsing capabilities.
+AIEdit is a cross-platform AI-powered text editor built with Tauri, SvelteKit, and TypeScript. It provides a clean, modern interface for editing text files with native performance, CLI argument parsing capabilities, and AI-assisted writing features.
 
 ## Features
 
@@ -10,25 +9,37 @@ AIEdit is a cross-platform text editor built with Tauri, SvelteKit, and TypeScri
 - **Fast**: Near-native performance with minimal resource usage
 - **CLI Support**: Parse command-line arguments and subcommands
 - **File Manipulation**: Read, write, and manage text files
+- **AI Assistance**: Generate and append AI-powered content
 - **Modern UI**: Clean, focused text editor interface
 - **Type Safety**: Full TypeScript support throughout
 
-## Verified Working Functionality
+## AI Features
 
-The application has been tested and verified to work correctly:
+AIEdit includes powerful AI-assisted writing capabilities:
 
+### Available AI Operations
+
+- **Generate Content**: Create new AI-generated content based on your prompts
+- **Append Content**: Add AI-generated content to existing text
+- **Multiple Use Cases**: Writing assistance, code generation, creative writing, etc.
+
+### How to Use AI Features
+
+1. Enter a prompt in the AI prompt field (e.g., "Write a short story about a robot learning to paint")
+2. Click "Generate" to replace the current content with AI-generated text
+3. Click "Append" to add AI-generated content to the end of existing text
+
+### Requirements
+
+To use AI features, you need to set your OpenAI API key as an environment variable:
 ```bash
-# Build the application
-bun tauri build
-
-# Run with a file argument
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
-# Output: 
-# Reading file: README.md
-# File read successfully
+export OPENAI_API_KEY="your-openai-api-key-here"
 ```
 
-The application successfully reads and displays file content when provided as a CLI argument.
+Then run the application as usual:
+```bash
+src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit
+```
 
 ## Recommended IDE Setup
 
@@ -57,6 +68,7 @@ The application successfully reads and displays file content when provided as a 
 - [Rust](https://www.rust-lang.org/) (version 1.77.2 or higher)
 - [Node.js](https://nodejs.org/) or [Bun](https://bun.sh/)
 - System-specific dependencies (see [Tauri prerequisites](https://tauri.app/start/prerequisites/))
+- [OpenAI API Key](https://platform.openai.com/api-keys) (for AI features)
 
 ### Installation
 
@@ -75,7 +87,51 @@ bun install
 npm install
 ```
 
-3. Install Rust dependencies (automatically handled by Cargo)
+3. Set your OpenAI API key as an environment variable:
+
+#### For Linux/macOS:
+
+1. Add the API key to your shell configuration file:
+```bash
+# For bash users, edit ~/.bashrc:
+echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.bashrc
+
+# For zsh users, edit ~/.zshrc:
+echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.zshrc
+```
+
+2. Reload your shell configuration:
+```bash
+# For bash:
+source ~/.bashrc
+
+# For zsh:
+source ~/.zshrc
+```
+
+3. Verify the environment variable is set:
+```bash
+echo $OPENAI_API_KEY
+```
+
+#### For Windows:
+
+1. Set the environment variable temporarily:
+```cmd
+set OPENAI_API_KEY=sk-xxxxx....
+```
+
+2. Or set it permanently through System Properties > Environment Variables
+
+#### Alternative Method:
+
+You can also set the environment variable just for the current session:
+```bash
+export OPENAI_API_KEY="your-openai-api-key-here"
+bun run tauri dev
+```
+
+4. Install Rust dependencies (automatically handled by Cargo)
 
 ### Development
 
@@ -156,7 +212,7 @@ File read successfully
 
 ## Text Editor Features
 
-AIEdit is a focused text editor with essential file manipulation capabilities powered by Rust's standard library:
+AIEdit is a focused text editor with essential file manipulation capabilities and AI-assisted writing features powered by Rust's standard library and OpenAI API:
 
 ### Available Operations
 
@@ -165,6 +221,8 @@ AIEdit is a focused text editor with essential file manipulation capabilities po
 - **Create Directory**: Create new directories (including nested paths)
 - **Delete File/Directory**: Remove files or entire directory trees
 - **Check Existence**: Verify if a file or directory exists
+- **AI Content Generation**: Generate new content using AI
+- **AI Content Append**: Add AI-generated content to existing text
 
 ### Simplified UI
 
@@ -172,6 +230,7 @@ The application features a clean, distraction-free interface:
 - Single text editing area
 - File path input field
 - Essential file operation buttons (Open, Save, Check)
+- AI prompt input field with Generate/Append buttons
 - Status bar for operation feedback
 - CLI information and error display panels
 
@@ -194,6 +253,9 @@ fs::remove_file(path) or fs::remove_dir_all(path)
 
 // Existence checking
 Path::new(path).exists()
+
+// AI content generation
+// Uses reqwest crate to call OpenAI API
 ```
 
 These operations are exposed to the frontend through Tauri's command system, allowing secure and efficient file manipulation from the UI.
@@ -223,6 +285,11 @@ To view and edit file content in AIEdit:
    - Edit the content in the text area
    - Click "Save" to write changes to the file
 
+4. **Using AI Features**:
+   - Enter a prompt in the AI prompt field (e.g., "Write a short story about a robot learning to paint")
+   - Click "Generate" to replace the current content with AI-generated text
+   - Click "Append" to add AI-generated content to the end of existing text
+
 When the application starts with a file argument, it will automatically read and display the content of the specified file. As verified in testing:
 
 ```
@@ -246,6 +313,54 @@ File read successfully
 - [Vite](https://vitejs.dev/): Next generation frontend tooling
 - [Rust](https://www.rust-lang.org/): Systems programming language focused on safety and performance
 
+### Environment Variables
+
+To use the AI features, you need to set your OpenAI API key as an environment variable. Here's how to do it properly:
+
+#### For Linux/macOS:
+
+1. Add the API key to your shell configuration file:
+```bash
+# For bash users, edit ~/.bashrc:
+echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.bashrc
+
+# For zsh users, edit ~/.zshrc:
+echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.zshrc
+```
+
+2. Reload your shell configuration:
+```bash
+# For bash:
+source ~/.bashrc
+
+# For zsh:
+source ~/.zshrc
+```
+
+3. Verify the environment variable is set:
+```bash
+echo $OPENAI_API_KEY
+```
+
+#### For Windows:
+
+1. Set the environment variable temporarily:
+```cmd
+set OPENAI_API_KEY=sk-xxxxx....
+```
+
+2. Or set it permanently through System Properties > Environment Variables
+
+#### Alternative Method:
+
+You can also set the environment variable just for the current session:
+```bash
+export OPENAI_API_KEY="your-openai-api-key-here"
+bun run tauri dev
+```
+
+**Note**: Never commit your API key to version control. The `.gitignore` file is already configured to exclude environment files.
+
 ## Customization
 
 ### Modifying the UI
@@ -267,9 +382,45 @@ Add new file manipulation functions in `src-tauri/src/lib.rs` using Rust's `std:
 3. Handle errors appropriately by returning `Result<T, String>`
 4. Register the function in the `invoke_handler` macro
 
+### Extending AI Features
+
+Add new AI features in `src-tauri/src/lib.rs`:
+
+1. Create a new function that uses the `reqwest` crate to call external APIs
+2. Handle API keys securely through environment variables
+3. Register the function in the `invoke_handler` macro
+4. Call the function from the frontend using `invoke()` from `@tauri-apps/api/core`
+
 ### Extending CLI Functionality
 
 Modify the CLI argument parsing in `src/routes/+page.svelte` to handle additional arguments or subcommands.
+
+### Troubleshooting AI Features
+
+If you encounter issues with AI features, here are common solutions:
+
+1. **"AI generation failed: Failed to extract generated text from response"**
+   - Check that your OpenAI API key is valid and has sufficient credits
+   - Verify the API key is properly set in environment variables
+   - Check your internet connection
+   - Look at the console logs for detailed error information
+
+2. **"OPENAI_API_KEY environment variable not set"**
+   - Ensure you've properly set the environment variable
+   - On Linux/macOS, reload your shell with `source ~/.bashrc` or `source ~/.zshrc`
+   - On Windows, restart your command prompt or IDE
+
+3. **Rate Limiting**
+   - If you see rate limit errors, wait a few minutes before trying again
+   - Consider upgrading your OpenAI plan for higher rate limits
+
+4. **Network Issues**
+   - Ensure you have internet connectivity
+   - Check if your firewall or proxy is blocking the request
+
+5. **Debugging**
+   - Open the developer console (Ctrl+Shift+I or Cmd+Option+I) to see detailed error logs
+   - The Rust backend prints debug information to the console when processing AI requests
 
 ## Troubleshooting
 
@@ -284,6 +435,8 @@ Modify the CLI argument parsing in `src/routes/+page.svelte` to handle additiona
 - Check the console for JavaScript errors
 - Use the Rust logs for backend debugging
 - Inspect network requests in the developer tools
+
+See the specific AI Features Troubleshooting section for AI-related issues.
 
 ## Contributing
 

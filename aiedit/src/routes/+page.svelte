@@ -9,6 +9,10 @@
   let filePath = $state("");
   let fileContent = $state("");
   let operationResult = $state("");
+  
+  // AI variables
+  let aiPrompt = $state("");
+  let isAiGenerating = $state(false);
 
   // Parse CLI arguments when the app starts
   async function parseCliArgs() {
@@ -204,6 +208,53 @@
       operationResult = `Error checking file existence: ${error}`;
     }
   }
+  
+  // AI operations
+  async function generateAiText() {
+    if (!aiPrompt.trim()) {
+      operationResult = "Please enter a prompt for AI generation";
+      return;
+    }
+    
+    isAiGenerating = true;
+    operationResult = "Generating AI content...";
+    
+    try {
+      const aiResponse = await invoke<string>("generate_ai_text", { prompt: aiPrompt });
+      fileContent = aiResponse;
+      operationResult = "AI content generated successfully";
+    } catch (error) {
+      operationResult = `AI generation failed: ${error}`;
+      console.error("AI generation error:", error);
+      // Show a more detailed error in the console for debugging
+      console.error("Full error details:", JSON.stringify(error, null, 2));
+    } finally {
+      isAiGenerating = false;
+    }
+  }
+  
+  async function appendAiText() {
+    if (!aiPrompt.trim()) {
+      operationResult = "Please enter a prompt for AI generation";
+      return;
+    }
+    
+    isAiGenerating = true;
+    operationResult = "Generating AI content...";
+    
+    try {
+      const aiResponse = await invoke<string>("generate_ai_text", { prompt: aiPrompt });
+      fileContent += "\n\n" + aiResponse;
+      operationResult = "AI content appended successfully";
+    } catch (error) {
+      operationResult = `AI generation failed: ${error}`;
+      console.error("AI generation error:", error);
+      // Show a more detailed error in the console for debugging
+      console.error("Full error details:", JSON.stringify(error, null, 2));
+    } finally {
+      isAiGenerating = false;
+    }
+  }
 
   // Call the function when the component mounts
   parseCliArgs();
@@ -226,6 +277,25 @@
       </div>
     </div>
     
+    <div class="ai-section">
+      <div class="ai-input-container">
+        <input 
+          id="ai-prompt" 
+          placeholder="Enter AI prompt (e.g., 'Write a short story about a robot learning to paint')..." 
+          bind:value={aiPrompt}
+          disabled={isAiGenerating}
+        />
+        <div class="ai-buttons">
+          <button onclick={generateAiText} disabled={isAiGenerating}>
+            {isAiGenerating ? "Generating..." : "Generate"}
+          </button>
+          <button onclick={appendAiText} disabled={isAiGenerating}>
+            {isAiGenerating ? "Generating..." : "Append"}
+          </button>
+        </div>
+      </div>
+    </div>
+    
     <textarea 
       id="file-content" 
       placeholder="File content will appear here..." 
@@ -237,10 +307,7 @@
     </div>
   </div>
   
-  <div class="cli-info" class:hide={!cliArgs}>
-    <h2>CLI Information</h2>
-    <pre>{operationResult}</pre>
-  </div>
+
 
   <div class="cli-error" class:hide={!cliError}>
     <h2>CLI Error</h2>
@@ -280,20 +347,20 @@
   gap: 10px;
 }
 
-.file-info {
+.file-info, .ai-input-container {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-#file-path {
+#file-path, #ai-prompt {
   flex: 1;
   padding: 8px;
   border-radius: 4px;
   border: 1px solid #ccc;
 }
 
-.file-buttons {
+.file-buttons, .ai-buttons {
   display: flex;
   gap: 5px;
 }
@@ -307,8 +374,13 @@ button {
   font-size: 14px;
 }
 
-button:hover {
+button:hover:not(:disabled) {
   background-color: #f0f0f0;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 #file-content {
@@ -327,6 +399,12 @@ button:hover {
   border-radius: 4px;
   font-size: 12px;
   color: #666;
+}
+
+.ai-section {
+  padding: 10px 0;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
 }
 
 .cli-info, .cli-error {
@@ -359,7 +437,7 @@ button:hover {
     background-color: #1a1a1a;
   }
   
-  #file-path, #file-content {
+  #file-path, #file-content, #ai-prompt {
     background-color: #2d2d2d;
     color: #f6f6f6;
     border-color: #444;
@@ -371,13 +449,17 @@ button:hover {
     border-color: #444;
   }
   
-  button:hover {
+  button:hover:not(:disabled) {
     background-color: #3d3d3d;
   }
   
   .status-bar {
     background-color: #2d2d2d;
     color: #aaa;
+  }
+  
+  .ai-section {
+    border-color: #444;
   }
   
   .cli-info {
