@@ -261,7 +261,10 @@
 </script>
 
 <main class="container">
-  <h1>AI Text Editor</h1>
+  <header class="app-header">
+    <h1>AI Text Editor</h1>
+    <p>Build by sudhirkumar.in</p>
+  </header>
   
   <div class="editor-container">
     <div class="file-info">
@@ -323,7 +326,7 @@
   font-weight: 400;
 
   color: #0f0f0f;
-  background-color: #f6f6f6;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -334,10 +337,32 @@
 
 .container {
   margin: 0;
-  padding: 20px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
+}
+
+.app-header {
+  text-align: center;
+  padding: 8px 0;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.app-header p {
+  margin: 2px 0 0 0;
+  font-size: 0.8rem;
+  opacity: 0.9;
 }
 
 .editor-container {
@@ -345,6 +370,10 @@
   flex-direction: column;
   flex: 1;
   gap: 10px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .file-info, .ai-input-container {
@@ -353,58 +382,98 @@
   align-items: center;
 }
 
+.file-info {
+  padding: 5px 0;
+}
+
 #file-path, #ai-prompt {
   flex: 1;
-  padding: 8px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 6px;
+  border: 2px solid #e1e5f0;
+  background-color: #ffffff;
+  font-size: 14px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s;
+}
+
+#file-path:focus, #ai-prompt:focus {
+  outline: none;
+  border-color: #6a11cb;
+  box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
 }
 
 .file-buttons, .ai-buttons {
   display: flex;
-  gap: 5px;
+  gap: 8px;
 }
 
 button {
   padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-  background-color: #fff;
+  border-radius: 6px;
+  border: none;
+  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 button:hover:not(:disabled) {
-  background-color: #f0f0f0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 #file-content {
   flex: 1;
   padding: 12px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+  border-radius: 6px;
+  border: 2px solid #e1e5f0;
+  background-color: #ffffff;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-size: 14px;
   resize: none;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: border-color 0.3s;
+}
+
+#file-content:focus {
+  outline: none;
+  border-color: #6a11cb;
+  box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
 }
 
 .status-bar {
-  padding: 8px;
-  background-color: #f0f0f0;
-  border-radius: 4px;
+  padding: 10px;
+  background: linear-gradient(90deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 6px;
   font-size: 12px;
-  color: #666;
+  color: #4a5568;
+  font-weight: 500;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .ai-section {
-  padding: 10px 0;
-  border-top: 1px solid #ddd;
-  border-bottom: 1px solid #ddd;
+  padding: 15px 0;
+  border-top: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6f0ff 100%);
+  border-radius: 6px;
+  margin: 5px 0;
+  padding: 12px;
 }
 
 .cli-info, .cli-error {
@@ -434,32 +503,53 @@ button:disabled {
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
-    background-color: #1a1a1a;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  }
+  
+  .container {
+    background-color: #1a1a2e;
+  }
+  
+  .app-header {
+    background: linear-gradient(90deg, #0f0c29 0%, #302b63 100%);
+  }
+  
+  .editor-container {
+    background: rgba(30, 30, 46, 0.8);
+    color: #f6f6f6;
   }
   
   #file-path, #file-content, #ai-prompt {
-    background-color: #2d2d2d;
+    background-color: #2d2d42;
     color: #f6f6f6;
-    border-color: #444;
+    border-color: #44475a;
+  }
+  
+  #file-path:focus, #ai-prompt:focus, #file-content:focus {
+    border-color: #6a11cb;
+    box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.2);
   }
   
   button {
-    background-color: #2d2d2d;
+    background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
     color: #f6f6f6;
-    border-color: #444;
+    border: none;
   }
   
   button:hover:not(:disabled) {
-    background-color: #3d3d3d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
   }
   
   .status-bar {
-    background-color: #2d2d2d;
-    color: #aaa;
+    background: linear-gradient(90deg, #2d2d42 0%, #3a3a5a 100%);
+    color: #e2e8f0;
+    border-color: #44475a;
   }
   
   .ai-section {
-    border-color: #444;
+    background: linear-gradient(135deg, #252540 0%, #1f1f3a 100%);
+    border-color: #44475a;
   }
   
   .cli-info {
