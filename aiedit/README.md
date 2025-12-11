@@ -187,20 +187,52 @@ This application includes the Tauri CLI plugin for parsing command-line argument
 # Build the application first
 bun tauri build
 
-# Basic usage with actual executable path
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit --input document.txt --output result.txt
+# Simple usage (after setting up the alias as described below)
+aiedit README.md
+aiedit Factorial.rs
+aiedit --input document.txt --output result.txt
 
 # With verbose logging
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit -v --input document.txt
+aiedit -v --input document.txt
 
 # With theme
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit --theme dark README.md
+aiedit --theme dark README.md
 
 # Using subcommands
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit edit myfile.txt
-src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit view myfile.txt
+aiedit edit myfile.txt
+aiedit view myfile.txt
+
+# Original long path usage (without alias setup)
+src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
 ```
+
+### Simplified Usage Setup
+
+To make the application easier to use, you can set up an alias:
+
+1. Make sure you're in the project root directory
+2. Run these commands to set up the alias:
+
+```bash
+# Add the alias to your shell configuration files
+echo "alias aiedit='/Users/sudhirkumar/Desktop/sudhir/gitsudhir/rust/aiedit/src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit'" >> ~/.zshrc
+echo "alias aiedit='/Users/sudhirkumar/Desktop/sudhir/gitsudhir/rust/aiedit/src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit'" >> ~/.bash_profile
+
+# Source your profile to load the alias in current session
+source ~/.zshrc
+```
+
+After running these commands, you can simply use:
+```bash
+aiedit Factorial.rs
+```
+
+Instead of the long path:
+```bash
+src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit Factorial.rs
+```
+
+Note: You only need to set up the alias once. After that, you can use the `aiedit` command from anywhere in your terminal.
 
 Parsed CLI arguments are displayed in the application interface for debugging purposes.
 
