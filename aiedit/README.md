@@ -164,6 +164,46 @@ bun run tauri build
 npm run tauri build
 ```
 
+### Linux Installation
+
+After building the application, Tauri generates packages for different Linux distributions including `.deb`, `.rpm`, and `.AppImage` formats:
+
+```bash
+# Build the application first
+bun tauri build
+
+# The build process will generate packages at:
+# /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/deb/aiedit_0.1.0_amd64.deb
+# /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/rpm/aiedit-0.1.0-1.x86_64.rpm
+# /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/appimage/aiedit_0.1.0_amd64.AppImage
+```
+
+Install the `.deb` package on Debian/Ubuntu-based systems:
+```bash
+sudo apt install /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/deb/aiedit_0.1.0_amd64.deb
+```
+
+Or install the `.rpm` package on Red Hat/Fedora-based systems:
+```bash
+sudo dnf install /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/rpm/aiedit-0.1.0-1.x86_64.rpm
+```
+
+Alternatively, you can use the portable `.AppImage` package:
+```bash
+# Make the AppImage executable
+chmod +x /home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/appimage/aiedit_0.1.0_amd64.AppImage
+
+# Run the AppImage
+/home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/appimage/aiedit_0.1.0_amd64.AppImage
+```
+
+Once installed, you can run the application from anywhere in your terminal:
+```bash
+aiedit Factorial.rs
+```
+
+Linux installation is simpler than macOS as the package managers handle the installation process automatically.
+
 ## CLI Plugin Usage
 
 This application includes the Tauri CLI plugin for parsing command-line arguments.
@@ -203,13 +243,20 @@ aiedit edit myfile.txt
 aiedit view myfile.txt
 
 # Original long path usage (without alias setup)
+# On macOS:
 src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
+
+# On Linux:
+src-tauri/target/release/bundle/deb/aiedit_0.1.0_amd64.deb/usr/bin/aiedit README.md
+# Or directly from the build directory:
+src-tauri/target/release/aiedit README.md
 ```
 
 ### Simplified Usage Setup
 
 To make the application easier to use, you can set up an alias:
 
+#### For macOS:
 1. Make sure you're in the project root directory
 2. Run these commands to set up the alias:
 
@@ -222,6 +269,20 @@ echo "alias aiedit='/Users/sudhirkumar/Desktop/sudhir/gitsudhir/rust/aiedit/src-
 source ~/.zshrc
 ```
 
+#### For Linux:
+If you've installed the .deb package, the `aiedit` command should already be available in your PATH. If you want to use the direct binary or AppImage, you can set up an alias:
+
+```bash
+# For the direct binary (after building):
+echo "alias aiedit='/home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/aiedit'" >> ~/.bashrc
+
+# Or for the AppImage:
+echo "alias aiedit='/home/sudhir/Desktop/sudhir/rust/aiedit/src-tauri/target/release/bundle/appimage/aiedit_0.1.0_amd64.AppImage'" >> ~/.bashrc
+
+# Source your profile to load the alias in current session
+source ~/.bashrc
+```
+
 After running these commands, you can simply use:
 ```bash
 aiedit Factorial.rs
@@ -229,7 +290,11 @@ aiedit Factorial.rs
 
 Instead of the long path:
 ```bash
+# On macOS:
 src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit Factorial.rs
+
+# On Linux:
+src-tauri/target/release/aiedit Factorial.rs
 ```
 
 Note: You only need to set up the alias once. After that, you can use the `aiedit` command from anywhere in your terminal.
@@ -299,16 +364,35 @@ To view and edit file content in AIEdit:
 1. **Using CLI Arguments**:
    ```bash
    # After building the application
+   # On macOS:
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
    
+   # On Linux:
+   src-tauri/target/release/aiedit README.md
+   # Or if installed via package manager:
+   aiedit README.md
+   
    # Or with the --input flag
+   # On macOS:
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit --input README.md
+   
+   # On Linux:
+   src-tauri/target/release/aiedit --input README.md
    ```
 
 2. **Using Subcommands**:
    ```bash
+   # On macOS:
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit edit README.md
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit view README.md
+   
+   # On Linux:
+   src-tauri/target/release/aiedit edit README.md
+   src-tauri/target/release/aiedit view README.md
+   
+   # Or if installed via package manager:
+   aiedit edit README.md
+   aiedit view README.md
    ```
 
 3. **Using the UI**:
