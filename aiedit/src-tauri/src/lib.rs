@@ -55,6 +55,34 @@ fn delete_file(path: &str) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn list_directory_contents(path: &str) -> Result<Vec<(String, bool)>, String> {
+    let mut entries = Vec::new();
+    let dir_path = Path::new(path);
+    
+    if dir_path.is_dir() {
+        for entry in fs::read_dir(dir_path).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let file_name = entry.file_name().to_string_lossy().to_string();
+            let is_dir = entry.file_type().map_err(|e| e.to_string())?.is_dir();
+            entries.push((file_name, is_dir));
+        }
+        // Sort entries: directories first, then files, both alphabetically
+        entries.sort_by(|a, b| {
+            if a.1 && !b.1 {
+                std::cmp::Ordering::Less
+            } else if !a.1 && b.1 {
+                std::cmp::Ordering::Greater
+            } else {
+                a.0.cmp(&b.0)
+            }
+        });
+        Ok(entries)
+    } else {
+        Err("Path is not a directory".to_string())
+    }
+}
+
+#[tauri::command]
 async fn generate_ai_text(prompt: &str) -> Result<String, String> {
     // Get API key from environment variable
     let api_key = env::var("OPENAI_API_KEY")
@@ -136,6 +164,7 @@ pub fn run() {
             create_directory,
             file_exists,
             delete_file,
+            list_directory_contents,
             generate_ai_text
         ])
         .run(tauri::generate_context!())

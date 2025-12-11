@@ -13,6 +13,10 @@
   // AI variables
   let aiPrompt = $state("");
   let isAiGenerating = $state(false);
+  
+  // File explorer state
+  let expandedFolders = $state(new Set<string>());
+  let folderContents = $state({} as Record<string, Array<[string, boolean]>>);
 
   // Parse CLI arguments when the app starts
   async function parseCliArgs() {
@@ -27,10 +31,163 @@
       } else {
         cliError = "Failed to initialize CLI service. CLI arguments may not be available.";
       }
+      
+      // Load file explorer
+      await loadFileExplorer();
     } catch (error) {
       console.error("Error parsing CLI arguments:", error);
       cliError = `Failed to parse CLI arguments: ${error}`;
     }
+  }
+  
+  async function loadFileExplorer() {
+    try {
+      // Get current directory
+      const currentDir = ".";
+      const entries = await listDirectoryContents(currentDir);
+      renderFileTree(entries);
+    } catch (error) {
+      console.error("Error loading file explorer:", error);
+      operationResult = `Error loading file explorer: ${error}`;
+    }
+  }
+  
+  async function listDirectoryContents(path: string): Promise<Array<[string, boolean]>> {
+    try {
+      const entries = await invoke<Array<[string, boolean]>>("list_directory_contents", { path });
+      return entries;
+    } catch (error) {
+      console.error(`Failed to list directory contents for ${path}:`, error);
+      throw error;
+    }
+  }
+  
+  async function toggleFolder(folderPath: string) {
+    if (expandedFolders.has(folderPath)) {
+      // Collapse folder
+      expandedFolders.delete(folderPath);
+    } else {
+      // Expand folder
+      try {
+        expandedFolders.add(folderPath);
+        const entries = await listDirectoryContents(folderPath);
+        folderContents[folderPath] = entries;
+      } catch (error) {
+        console.error(`Failed to load contents of folder ${folderPath}:`, error);
+        operationResult = `Failed to load folder contents: ${error}`;
+        expandedFolders.delete(folderPath);
+      }
+    }
+    // Re-render the file tree
+    loadFileExplorer();
+  }
+  
+  function renderFileTree(entries: Array<[string, boolean]>) {
+    const fileTree = document.getElementById('file-tree');
+    if (!fileTree) return;
+    
+    fileTree.innerHTML = '';
+    
+    // Get just the filename part if filePath contains a path
+    let currentFileName = filePath;
+    if (filePath && filePath.includes('/')) {
+      currentFileName = filePath.split('/').pop() || filePath;
+    }
+    
+    // Helper function to render entries recursively
+    function renderEntries(entries: Array<[string, boolean]>, parentPath: string = '') {
+      return entries.map(([name, isDir]) => {
+        const fullPath = parentPath ? `${parentPath}/${name}` : name;
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.dataset.name = fullPath;
+        li.dataset.isDirectory = isDir.toString();
+        
+        // Highlight the currently opened file
+        if (fullPath === currentFileName || name === currentFileName) {
+          li.classList.add('active-file');
+        }
+        
+        if (isDir) {
+          // Create folder entry with expand/collapse functionality
+          const fileEntry = document.createElement('div');
+          fileEntry.className = 'file-entry folder';
+          
+          // Create expand/collapse indicator
+          const indicatorSpan = document.createElement('span');
+          indicatorSpan.className = 'folder-indicator';
+          indicatorSpan.textContent = expandedFolders.has(fullPath) ? '📂' : '📁';
+          indicatorSpan.style.cursor = 'pointer';
+          indicatorSpan.style.marginRight = '4px';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'file-name';
+          nameSpan.textContent = name;
+          nameSpan.style.cursor = 'pointer';
+          
+          fileEntry.appendChild(indicatorSpan);
+          fileEntry.appendChild(nameSpan);
+          li.appendChild(fileEntry);
+          
+          // Add click event to toggle folder
+          li.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFolder(fullPath);
+          });
+          
+          // If folder is expanded, render its contents
+          if (expandedFolders.has(fullPath) && folderContents[fullPath]) {
+            const subList = document.createElement('ul');
+            subList.className = 'sub-folder';
+            subList.style.marginLeft = '20px';
+            subList.style.listStyle = 'none';
+            subList.style.paddingLeft = '0';
+            
+            // Render sub-folder contents
+            const subItems = renderEntries(folderContents[fullPath], fullPath);
+            subItems.forEach(item => subList.appendChild(item));
+            
+            li.appendChild(subList);
+          }
+        } else {
+          // Create file entry
+          const fileEntry = document.createElement('div');
+          fileEntry.className = 'file-entry file';
+          
+          const iconSpan = document.createElement('span');
+          iconSpan.className = 'file-icon';
+          iconSpan.textContent = '📄';
+          iconSpan.style.cursor = 'pointer';
+          iconSpan.style.marginRight = '4px';
+          iconSpan.style.fontSize = '1rem';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'file-name';
+          nameSpan.textContent = name;
+          nameSpan.style.cursor = 'pointer';
+          nameSpan.style.fontSize = '0.9rem';
+          nameSpan.style.color = '#4a5568';
+          
+          fileEntry.appendChild(iconSpan);
+          fileEntry.appendChild(nameSpan);
+          li.appendChild(fileEntry);
+          
+          // Add click event to open files
+          li.addEventListener('click', () => {
+            filePath = fullPath;
+            readFile(fullPath);
+            // Re-render to highlight the active file
+            loadFileExplorer();
+          });
+        }
+        
+        return li;
+      });
+    }
+    
+    // Render root entries
+    const items = renderEntries(entries);
+    items.forEach(item => fileTree.appendChild(item));
   }
   
   async function loadFileContent() {
@@ -40,7 +197,11 @@
       console.log('File content loaded:', content);
       if (content !== null) {
         fileContent = content;
-        filePath = getFileArgument() || "";
+        // Set filePath to just the filename, not the full path
+        const fileArg = getFileArgument();
+        if (fileArg) {
+          filePath = fileArg.includes('/') ? fileArg.split('/').pop() || fileArg : fileArg;
+        }
       }
     } catch (error) {
       console.error('Error loading file content:', error);
@@ -266,7 +427,17 @@
     <p>Build by sudhirkumar.in</p>
   </header>
   
-  <div class="editor-container">
+  <div class="main-layout">
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h3>Explorer</h3>
+      </div>
+      <ul class="file-tree" id="file-tree">
+        <!-- File tree will be populated by JavaScript -->
+      </ul>
+    </aside>
+    
+    <div class="editor-container">
     <div class="file-info">
       <input 
         id="file-path" 
@@ -309,6 +480,7 @@
       <span class="operation-result">{operationResult}</span>
     </div>
   </div>
+</div>
   
 
 
@@ -363,6 +535,112 @@
   margin: 2px 0 0 0;
   font-size: 0.8rem;
   opacity: 0.9;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  gap: 15px;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow-y: auto;
+  max-height: calc(100vh - 120px);
+}
+
+.sidebar-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  color: #4a5568;
+  font-size: 1rem;
+}
+
+.file-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.folder-indicator {
+  font-size: 1rem;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.file-item {
+  margin: 2px 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  transition: background-color 0.2s;
+  cursor: pointer;
+}
+
+.file-item:hover {
+  background-color: rgba(106, 17, 203, 0.1);
+}
+
+.file-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.folder-icon, .file-icon {
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.folder .file-name {
+  font-weight: 500;
+}
+
+.active-file {
+  background-color: rgba(106, 17, 203, 0.2);
+  font-weight: 500;
+}
+
+.active-file .file-name {
+  color: #6a11cb;
+}
+
+.file-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.folder-icon, .file-icon {
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.file-name {
+  font-size: 0.9rem;
+  color: #4a5568;
+  cursor: pointer;
+}
+
+.folder .file-name {
+  font-weight: 500;
 }
 
 .editor-container {
@@ -512,6 +790,59 @@ button:active:not(:disabled) {
   
   .app-header {
     background: linear-gradient(90deg, #0f0c29 0%, #302b63 100%);
+  }
+  
+  .main-layout {
+    /* Inherits display: flex from light mode */
+  }
+  
+  .sidebar {
+    background: rgba(30, 30, 46, 0.8);
+    color: #f6f6f6;
+  }
+  
+  .sidebar-header {
+    border-color: #44475a;
+  }
+  
+  .sidebar-header h3 {
+    color: #e2e8f0;
+  }
+  
+  .folder-indicator {
+    cursor: pointer;
+  }
+  
+  .file-item {
+    cursor: pointer;
+  }
+  
+  .file-item:hover {
+    background-color: rgba(106, 17, 203, 0.2);
+    cursor: pointer;
+  }
+  
+  .file-entry {
+    cursor: pointer;
+  }
+  
+  .file-name {
+    color: #e2e8f0;
+    cursor: pointer;
+  }
+  
+  .folder-icon, .file-icon {
+    cursor: pointer;
+  }
+  
+  .active-file {
+    background-color: rgba(106, 17, 203, 0.3);
+    cursor: pointer;
+  }
+  
+  .active-file .file-name {
+    color: #a78bfa;
+    cursor: pointer;
   }
   
   .editor-container {
