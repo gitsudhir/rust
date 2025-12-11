@@ -2,8 +2,6 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getMatches } from "@tauri-apps/plugin-cli";
 
-  let name = $state("");
-  let greetMsg = $state("");
   let cliArgs = $state({});
   let cliError = $state("");
   
@@ -12,15 +10,9 @@
   let fileContent = $state("");
   let operationResult = $state("");
 
-  async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
-  }
-
   // Parse CLI arguments when the app starts
   async function parseCliArgs() {
-    console.log('AppComponent initializing...');
+    console.log('TextEditor initializing...');
     try {
       cliArgs = await getMatches();
       console.log('CLI Matches:', cliArgs);
@@ -44,6 +36,7 @@
       console.log('File content loaded:', content);
       if (content !== null) {
         fileContent = content;
+        filePath = getFileArgument() || "";
       }
     } catch (error) {
       console.error('Error loading file content:', error);
@@ -59,15 +52,12 @@
       const isVerbose = isVerboseMode();
       const theme = getTheme();
       const subcommand = getSubcommand();
-      const subcommandMatches = getSubcommandMatches();
       
       operationResult = `File: ${fileArg || 'Not specified'}\n` +
                      `Output: ${outputArg || 'Not specified'}\n` +
                      `Verbose: ${isVerbose ? 'Yes' : 'No'}\n` +
                      `Theme: ${theme || 'Not specified'}\n` +
-                     (subcommand ? `Subcommand: ${subcommand}\n` : '') +
-                     (subcommandMatches ? `Subcommand Args: ${JSON.stringify(subcommandMatches, null, 2)}\n` : '') +
-                     `All Args: ${JSON.stringify(getAllArguments(), null, 2)}`;
+                     (subcommand ? `Subcommand: ${subcommand}\n` : '');
     } else {
       operationResult = "No CLI arguments provided.";
     }
@@ -171,6 +161,7 @@
   async function readFile(path: string) {
     try {
       fileContent = await invoke("read_file", { path }) as string;
+      filePath = path;
       operationResult = `Successfully read file: ${path}`;
     } catch (error) {
       operationResult = `Error reading file: ${error}`;
@@ -219,58 +210,20 @@
 </script>
 
 <main class="container">
-  <h1>Welcome to Tauri + Svelte</h1>
-
-  <div class="row">
-    <a href="https://vite.dev" target="_blank">
-      <img src="/vite.svg" class="logo vite" alt="Vite Logo" />
-    </a>
-    <a href="https://tauri.app" target="_blank">
-      <img src="/tauri.svg" class="logo tauri" alt="Tauri Logo" />
-    </a>
-    <a href="https://svelte.dev" target="_blank">
-      <img src="/svelte.svg" class="logo svelte-kit" alt="SvelteKit Logo" />
-    </a>
-  </div>
-  <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
-
-  <div class="cli-info" class:hide={!cliArgs}>
-    <h2>CLI Information</h2>
-    <pre>{operationResult}</pre>
-  </div>
-
-  <div class="file-content" class:hide={!fileContent}>
-    <h2>File Content</h2>
-    <pre>{fileContent}</pre>
-  </div>
-
-  <div class="cli-error" class:hide={!cliError}>
-    <h2>CLI Error</h2>
-    <p>{cliError}</p>
-  </div>
-
-  <form class="row" onsubmit={greet}>
-    <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
-    <button type="submit">Greet</button>
-  </form>
-  <p>{greetMsg}</p>
+  <h1>AI Text Editor</h1>
   
-  <!-- File Operations Section -->
-  <div class="file-operations">
-    <h2>File Operations</h2>
-    <div class="file-input-row">
+  <div class="editor-container">
+    <div class="file-info">
       <input 
         id="file-path" 
         placeholder="Enter file path..." 
         bind:value={filePath} 
       />
-    </div>
-    
-    <div class="file-buttons">
-      <button onclick={() => readFile(filePath)}>Read File</button>
-      <button onclick={checkFileExists}>Check Exists</button>
-      <button onclick={createDirectory}>Create Dir</button>
-      <button onclick={deleteFile}>Delete</button>
+      <div class="file-buttons">
+        <button onclick={() => readFile(filePath)}>Open</button>
+        <button onclick={writeFile}>Save</button>
+        <button onclick={checkFileExists}>Check</button>
+      </div>
     </div>
     
     <textarea 
@@ -279,23 +232,23 @@
       bind:value={fileContent}
     ></textarea>
     
-    <div class="file-buttons">
-      <button onclick={writeFile}>Write File</button>
+    <div class="status-bar">
+      <span class="operation-result">{operationResult}</span>
     </div>
-    
-    <p class="operation-result">{operationResult}</p>
+  </div>
+  
+  <div class="cli-info" class:hide={!cliArgs}>
+    <h2>CLI Information</h2>
+    <pre>{operationResult}</pre>
+  </div>
+
+  <div class="cli-error" class:hide={!cliError}>
+    <h2>CLI Error</h2>
+    <p>{cliError}</p>
   </div>
 </main>
 
 <style>
-.logo.vite:hover {
-  filter: drop-shadow(0 0 2em #747bff);
-}
-
-.logo.svelte-kit:hover {
-  filter: drop-shadow(0 0 2em #ff3e00);
-}
-
 :root {
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
@@ -314,176 +267,125 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  height: 100vh;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: 0.75s;
-}
-
-.logo.tauri:hover {
-  filter: drop-shadow(0 0 2em #24c8db);
-}
-
-.row {
+.editor-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  flex: 1;
+  gap: 10px;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-
-a:hover {
-  color: #535bf2;
-}
-
-h1 {
-  text-align: center;
-}
-
-input,
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  color: #0f0f0f;
-  background-color: #ffffff;
-  transition: border-color 0.25s;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  border-color: #396cd8;
-}
-button:active {
-  border-color: #396cd8;
-  background-color: #e8e8e8;
-}
-
-input,
-button {
-  outline: none;
-}
-
-#greet-input {
-  margin-right: 5px;
-}
-
-.cli-info {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.cli-info h2 {
-  margin-top: 0;
-}
-
-.cli-info pre {
-  background-color: #e0e0e0;
-  padding: 1rem;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.file-operations {
-  margin-top: 2rem;
-  padding: 1rem;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.file-operations h2 {
-  margin-top: 0;
-}
-
-.file-input-row {
-  margin-bottom: 1rem;
+.file-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 #file-path {
-  width: 100%;
-  margin-right: 0;
+  flex: 1;
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
 }
 
 .file-buttons {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
+  gap: 5px;
+}
+
+button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+button:hover {
+  background-color: #f0f0f0;
 }
 
 #file-content {
-  width: 100%;
-  min-height: 150px;
-  margin-bottom: 1rem;
-  font-family: monospace;
-  padding: 0.5rem;
+  flex: 1;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  resize: none;
 }
 
-.operation-result {
-  font-style: italic;
+.status-bar {
+  padding: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  font-size: 12px;
   color: #666;
+}
+
+.cli-info, .cli-error {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.cli-info {
+  background-color: #e8f4fd;
+}
+
+.cli-error {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.cli-info h2, .cli-error h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.hide {
+  display: none;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color: #f6f6f6;
-    background-color: #2f2f2f;
+    background-color: #1a1a1a;
   }
-
-  a:hover {
-    color: #24c8db;
+  
+  #file-path, #file-content {
+    background-color: #2d2d2d;
+    color: #f6f6f6;
+    border-color: #444;
   }
-
-  input,
+  
   button {
-    color: #ffffff;
-    background-color: #0f0f0f98;
-  }
-  button:active {
-    background-color: #0f0f0f69;
+    background-color: #2d2d2d;
+    color: #f6f6f6;
+    border-color: #444;
   }
   
-  .cli-info {
-    background-color: #3f3f3f;
+  button:hover {
+    background-color: #3d3d3d;
   }
   
-  .cli-info pre {
-    background-color: #2f2f2f;
-  }
-  
-  .file-operations {
-    background-color: #3f3f3f;
-  }
-  
-  .operation-result {
+  .status-bar {
+    background-color: #2d2d2d;
     color: #aaa;
   }
   
-  .hide {
-    display: none;
+  .cli-info {
+    background-color: #1a3d5d;
+  }
+  
+  .cli-error {
+    background-color: #5d1a1a;
   }
 }
-
 </style>

@@ -1,6 +1,7 @@
+# Sudhir
 # AIEdit - Tauri + SvelteKit + TypeScript
 
-AIEdit is a cross-platform desktop application built with Tauri, SvelteKit, and TypeScript. It provides a modern UI with native performance and includes CLI argument parsing capabilities, as well as file manipulation features.
+AIEdit is a cross-platform text editor built with Tauri, SvelteKit, and TypeScript. It provides a clean, modern interface for editing text files with native performance and CLI argument parsing capabilities.
 
 ## Features
 
@@ -8,8 +9,8 @@ AIEdit is a cross-platform desktop application built with Tauri, SvelteKit, and 
 - **Lightweight**: Small bundle size thanks to Tauri's Rust backend
 - **Fast**: Near-native performance with minimal resource usage
 - **CLI Support**: Parse command-line arguments and subcommands
-- **File Manipulation**: Read, write, and manage files and directories
-- **Modern UI**: Built with SvelteKit and TypeScript
+- **File Manipulation**: Read, write, and manage text files
+- **Modern UI**: Clean, focused text editor interface
 - **Type Safety**: Full TypeScript support throughout
 
 ## Verified Working Functionality
@@ -153,17 +154,26 @@ Reading file: README.md
 File read successfully
 ```
 
-## File Manipulation Features
+## Text Editor Features
 
-AIEdit includes powerful file manipulation capabilities powered by Rust's standard library:
+AIEdit is a focused text editor with essential file manipulation capabilities powered by Rust's standard library:
 
 ### Available Operations
 
-- **Read File**: Load content from any text file
-- **Write File**: Save content to a file (creates new or overwrites existing)
+- **Open File**: Load content from any text file
+- **Save File**: Save content to a file (creates new or overwrites existing)
 - **Create Directory**: Create new directories (including nested paths)
 - **Delete File/Directory**: Remove files or entire directory trees
 - **Check Existence**: Verify if a file or directory exists
+
+### Simplified UI
+
+The application features a clean, distraction-free interface:
+- Single text editing area
+- File path input field
+- Essential file operation buttons (Open, Save, Check)
+- Status bar for operation feedback
+- CLI information and error display panels
 
 ### Rust Implementation
 
@@ -188,16 +198,11 @@ Path::new(path).exists()
 
 These operations are exposed to the frontend through Tauri's command system, allowing secure and efficient file manipulation from the UI.
 
-### Viewing File Content
+### Viewing and Editing File Content
 
-To view file content in AIEdit:
+To view and edit file content in AIEdit:
 
-1. **Using the UI Interface**: 
-   - Enter the file path in the "Enter file path..." input field
-   - Click the "Read File" button
-   - The file content will be displayed in the text area below
-
-2. **Using CLI Arguments**:
+1. **Using CLI Arguments**:
    ```bash
    # After building the application
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit README.md
@@ -206,11 +211,17 @@ To view file content in AIEdit:
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit --input README.md
    ```
 
-3. **Using Subcommands**:
+2. **Using Subcommands**:
    ```bash
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit edit README.md
    src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit view README.md
    ```
+
+3. **Using the UI**:
+   - Enter the file path in the input field at the top
+   - Click the "Open" button to load the file content
+   - Edit the content in the text area
+   - Click "Save" to write changes to the file
 
 When the application starts with a file argument, it will automatically read and display the content of the specified file. As verified in testing:
 
