@@ -94,6 +94,86 @@
       currentFileName = filePath.split('/').pop() || filePath;
     }
     
+    // File type icon mapping with comprehensive DevOps support
+    const fileIcons: Record<string, string> = {
+      // DevOps Configuration & Pipelines
+      '.yaml': '⚙️', '.yml': '⚙️', '.json': '⚙️', '.xml': '⚙️',
+      '.conf': '🔧', '.ini': '🔧', '.env': '🔐', '.toml': '⚙️',
+      '.cfg': '🔧', '.config': '🔧',
+      
+      // DevOps Scripting & Automation
+      '.sh': '쉘', '.ps1': '⚡', '.py': '🐍', '.rb': '💎',
+      '.pl': '🐪', '.bat': '⚡', '.cmd': '⚡',
+      
+      // Infrastructure as Code (IaC) & Containers
+      '.tf': '🏗️', '.tfvars': '🏗️', 'Dockerfile': '🐳', '.dockerignore': '🐳',
+      'docker-compose.yml': '🐳', 'docker-compose.yaml': '🐳',
+      
+      // Cloud Provider Specific
+      '.template': '☁️', // AWS CloudFormation
+      '.ebextensions': '☁️', // AWS Elastic Beanstalk
+      
+      // Application/Code Related
+      '.js': '📜', '.ts': '📜', '.jsx': '⚛️', '.tsx': '⚛️',
+      '.html': '🌐', '.css': '🎨', '.scss': '🎨', '.sass': '🎨',
+      '.go': '🐹', '.java': '☕', '.cs': '☪️', '.php': '🐘',
+      '.cpp': '++', '.c': '🇨', '.rs': '🦀', '.kt': '📌',
+      '.jar': '📦', '.war': '📦', '.ear': '📦',
+      
+      // Documentation & Data
+      '.md': '📘', '.markdown': '📘', '.txt': '📝',
+      '.csv': '📊', '.tsv': '📊', '.log': '📋',
+      '.pdf': '📚', '.doc': '📘', '.docx': '📘',
+      
+      // Media files
+      '.png': '🖼️', '.jpg': '🖼️', '.jpeg': '🖼️', '.gif': '🖼️',
+      '.svg': '🎨', '.ico': '🌟', '.bmp': '🖼️',
+      '.mp4': '🎬', '.avi': '🎬', '.mov': '🎬', '.mkv': '🎬',
+      '.mp3': '🎵', '.wav': '🎵', '.flac': '🎵', '.aac': '🎵',
+      
+      // Web frameworks
+      '.vue': '💚', '.svelte': '❤️', '.astro': '🌌', '.elm': '🇪',
+      
+      // Database
+      '.sql': '🗄️', '.db': '🗄️', '.sqlite': '🗄️', '.dump': '🗄️',
+      
+      // Archives
+      '.zip': '📦', '.rar': '📦', '.tar': '📦', '.gz': '📦',
+      '.7z': '📦', '.bz2': '📦',
+      
+      // Executables & Binaries
+      '.exe': '⚡', '.dll': '⚡', '.so': '⚡', '.app': '⚡',
+      '.bin': '🔢', '.iso': '💿',
+      
+      // DevOps Tools & Platform Specific
+      '.otd': '🧪', '.oti': '🧪', '.pts': '🧪',
+      '.vss-extension.json': '🔌',
+      
+      // Nginx specific
+      'nginx.conf': '🌐', '.nginx': '🌐',
+      
+      // Default
+      'default': '📄',
+      'folder': '📁',
+      'folder-open': '📂'
+    };
+    
+    // Get appropriate icon for a file based on its extension or name
+    function getFileIcon(filename: string, isDirectory: boolean): string {
+      if (isDirectory) {
+        return fileIcons['folder'];
+      }
+      
+      // Check for exact filename matches first (for special files like Dockerfile)
+      if (fileIcons[filename]) {
+        return fileIcons[filename];
+      }
+      
+      // Check for extension-based matches
+      const ext = '.' + filename.split('.').pop()?.toLowerCase();
+      return fileIcons[ext] || fileIcons['default'];
+    }
+    
     // Helper function to render entries recursively
     function renderEntries(entries: Array<[string, boolean]>, parentPath: string = '') {
       return entries.map(([name, isDir]) => {
@@ -116,7 +196,7 @@
           // Create expand/collapse indicator
           const indicatorSpan = document.createElement('span');
           indicatorSpan.className = 'folder-indicator';
-          indicatorSpan.textContent = expandedFolders.has(fullPath) ? '📂' : '📁';
+          indicatorSpan.textContent = expandedFolders.has(fullPath) ? fileIcons['folder-open'] : fileIcons['folder'];
           indicatorSpan.style.cursor = 'pointer';
           indicatorSpan.style.marginRight = '4px';
           
@@ -150,13 +230,13 @@
             li.appendChild(subList);
           }
         } else {
-          // Create file entry
+          // Create file entry with type-specific icon
           const fileEntry = document.createElement('div');
           fileEntry.className = 'file-entry file';
           
           const iconSpan = document.createElement('span');
           iconSpan.className = 'file-icon';
-          iconSpan.textContent = '📄';
+          iconSpan.textContent = getFileIcon(name, false);
           iconSpan.style.cursor = 'pointer';
           iconSpan.style.marginRight = '4px';
           iconSpan.style.fontSize = '1rem';
