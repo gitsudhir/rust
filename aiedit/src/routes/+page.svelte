@@ -26,6 +26,20 @@
       console.log('CLI Matches:', cliArgs);
       
       if (cliArgs) {
+        // Check for version flag first
+        if (isVersionFlag()) {
+          // Display version information and exit
+          operationResult = "AIEdit version 0.1.1";
+          return;
+        }
+        
+        // Check for help flag
+        if (isHelpFlag()) {
+          // Display help information and exit
+          operationResult = "Sudhir Kumar (sudhirkumar.in)";
+          return;
+        }
+        
         displayCliInfo();
         await loadFileContent();
       } else {
@@ -359,6 +373,22 @@
       return cliArgs.args[argName].value;
     }
     return undefined;
+  }
+  
+  function isVersionFlag(): boolean {
+    // Check for both long (--version) and short (-V) version flags
+    return cliArgs && 
+           cliArgs.args && 
+           (('version' in cliArgs.args && cliArgs.args.version.value === true) ||
+            ('V' in cliArgs.args && cliArgs.args.V.value === true));
+  }
+  
+  function isHelpFlag(): boolean {
+    // Check for both long (--help) and short (-h) help flags
+    return cliArgs && 
+           cliArgs.args && 
+           (('help' in cliArgs.args && cliArgs.args.help.value === true) ||
+            ('h' in cliArgs.args && cliArgs.args.h.value === true));
   }
   
   function getSubcommand(): string | null {
