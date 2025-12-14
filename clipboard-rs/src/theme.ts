@@ -1,7 +1,8 @@
 import { createTheme } from "@mui/material/styles";
 
-const theme = createTheme({
+const createAppTheme = (mode: 'light' | 'dark' = 'light') => createTheme({
   palette: {
+    mode,
     primary: {
       main: "#1976d2",
     },
@@ -9,8 +10,8 @@ const theme = createTheme({
       main: "#e57373",
     },
     background: {
-      default: "#f5f5f5",
-      paper: "#ffffff",
+      default: mode === 'dark' ? '#121212' : "#f5f5f5",
+      paper: mode === 'dark' ? '#1e1e1e' : "#ffffff",
     },
   },
   typography: {
@@ -26,7 +27,7 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 0,
           boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
         },
       },
@@ -52,4 +53,4 @@ const theme = createTheme({
   },
 });
 
-export default theme;
+export default createAppTheme;
