@@ -31,10 +31,11 @@ AIEdit includes powerful AI-assisted writing capabilities:
 
 ### Requirements
 
-To use AI features, you need to set your OpenAI API key as an environment variable:
-```bash
-export OPENAI_API_KEY="your-openai-api-key-here"
-```
+To use AI features, you need to have Ollama installed and running locally:
+
+1. Install Ollama from https://ollama.ai
+2. Pull a model (e.g., `ollama pull llama3`)  
+3. Start Ollama with `ollama serve`
 
 Then run the application as usual:
 ```bash
@@ -68,7 +69,7 @@ src-tauri/target/release/bundle/macos/aiedit.app/Contents/MacOS/aiedit
 - [Rust](https://www.rust-lang.org/) (version 1.77.2 or higher)
 - [Node.js](https://nodejs.org/) or [Bun](https://bun.sh/)
 - System-specific dependencies (see [Tauri prerequisites](https://tauri.app/start/prerequisites/))
-- [OpenAI API Key](https://platform.openai.com/api-keys) (for AI features)
+- [Ollama](https://ollama.ai) (for AI features)
 
 ### Installation
 
@@ -87,17 +88,20 @@ bun install
 npm install
 ```
 
-3. Set your OpenAI API key as an environment variable:
+3. Set up Ollama for local AI processing:
 
 #### For Linux/macOS:
 
-1. Add the API key to your shell configuration file:
-```bash
-# For bash users, edit ~/.bashrc:
-echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.bashrc
+1. Install Ollama from https://ollama.ai
 
-# For zsh users, edit ~/.zshrc:
-echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.zshrc
+2. Pull a model (e.g., Llama 3):
+```bash
+ollama pull llama3
+```
+
+3. Start the Ollama server:
+```bash
+ollama serve
 ```
 
 2. Reload your shell configuration:
@@ -109,25 +113,30 @@ source ~/.bashrc
 source ~/.zshrc
 ```
 
-3. Verify the environment variable is set:
+3. Verify Ollama is running:
 ```bash
-echo $OPENAI_API_KEY
+curl http://localhost:11434/api/tags
 ```
 
 #### For Windows:
 
-1. Set the environment variable temporarily:
+1. Install Ollama from https://ollama.ai
+
+2. Pull a model (e.g., Llama 3):
 ```cmd
-set OPENAI_API_KEY=sk-xxxxx....
+ollama pull llama3
 ```
 
-2. Or set it permanently through System Properties > Environment Variables
+3. Start the Ollama server:
+```cmd
+ollama serve
+```
 
 #### Alternative Method:
 
-You can also set the environment variable just for the current session:
+Make sure Ollama is running in a separate terminal:
 ```bash
-export OPENAI_API_KEY="your-openai-api-key-here"
+ollama serve
 bun run tauri dev
 ```
 
@@ -309,7 +318,7 @@ File read successfully
 
 ## Text Editor Features
 
-AIEdit is a focused text editor with essential file manipulation capabilities and AI-assisted writing features powered by Rust's standard library and OpenAI API:
+AIEdit is a focused text editor with essential file manipulation capabilities and AI-assisted writing features powered by Rust's standard library and local Ollama API:
 
 ### Available Operations
 
@@ -352,7 +361,7 @@ fs::remove_file(path) or fs::remove_dir_all(path)
 Path::new(path).exists()
 
 // AI content generation
-// Uses reqwest crate to call OpenAI API
+// Uses reqwest crate to call Ollama API
 ```
 
 These operations are exposed to the frontend through Tauri's command system, allowing secure and efficient file manipulation from the UI.
@@ -431,51 +440,53 @@ File read successfully
 
 ### Environment Variables
 
-To use the AI features, you need to set your OpenAI API key as an environment variable. Here's how to do it properly:
+To use the AI features, you need to have Ollama installed and running locally:
 
 #### For Linux/macOS:
 
-1. Add the API key to your shell configuration file:
+1. Install Ollama from https://ollama.ai
 ```bash
 # For bash users, edit ~/.bashrc:
-echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.bashrc
+# No environment variables needed for local Ollama
 
 # For zsh users, edit ~/.zshrc:
-echo 'export OPENAI_API_KEY="sk-xxxxx...."' >> ~/.zshrc
+# No environment variables needed for local Ollama
 ```
 
-2. Reload your shell configuration:
+2. Install and run Ollama:
 ```bash
-# For bash:
-source ~/.bashrc
+# Pull a model (if not done already)
+ollama pull llama3
 
-# For zsh:
-source ~/.zshrc
-```
-
-3. Verify the environment variable is set:
-```bash
-echo $OPENAI_API_KEY
+# Start the Ollama server
+ollama serve
 ```
 
 #### For Windows:
 
-1. Set the environment variable temporarily:
+1. Install Ollama from https://ollama.ai
+
+2. Pull a model (e.g., Llama 3):
 ```cmd
-set OPENAI_API_KEY=sk-xxxxx....
+ollama pull llama3
+```
+
+3. Start the Ollama server:
+```cmd
+ollama serve
 ```
 
 2. Or set it permanently through System Properties > Environment Variables
 
 #### Alternative Method:
 
-You can also set the environment variable just for the current session:
+Make sure Ollama is running in a separate terminal:
 ```bash
-export OPENAI_API_KEY="your-openai-api-key-here"
+ollama serve
 bun run tauri dev
 ```
 
-**Note**: Never commit your API key to version control. The `.gitignore` file is already configured to exclude environment files.
+**Note**: Ollama runs locally and doesn't require API keys.
 
 ## Customization
 
@@ -515,22 +526,20 @@ Modify the CLI argument parsing in `src/routes/+page.svelte` to handle additiona
 
 If you encounter issues with AI features, here are common solutions:
 
-1. **"AI generation failed: Failed to extract generated text from response"**
-   - Check that your OpenAI API key is valid and has sufficient credits
-   - Verify the API key is properly set in environment variables
-   - Check your internet connection
-   - Look at the console logs for detailed error information
+1. **"AI generation failed: Failed to extract generated text from Ollama response"**
+   - Check that Ollama is running (`ollama serve`)
+   - Verify the model is pulled (`ollama pull llama3`)
+   - Check the console logs for detailed error information
 
-2. **"OPENAI_API_KEY environment variable not set"**
-   - Ensure you've properly set the environment variable
-   - On Linux/macOS, reload your shell with `source ~/.bashrc` or `source ~/.zshrc`
-   - On Windows, restart your command prompt or IDE
+2. **"Failed to send request to Ollama"**
+   - Ensure Ollama is running on http://localhost:11434
+   - Check that you can access Ollama by running `curl http://localhost:11434/api/tags`
 
-3. **Rate Limiting**
-   - If you see rate limit errors, wait a few minutes before trying again
-   - Consider upgrading your OpenAI plan for higher rate limits
+3. **Model Loading Issues**
+   - If you see model not found errors, pull the required model with `ollama pull llama3`
+   - Make sure you have enough disk space for the model
 
-4. **Network Issues**
+4. **Performance Issues**
    - Ensure you have internet connectivity
    - Check if your firewall or proxy is blocking the request
 

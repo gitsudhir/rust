@@ -84,66 +84,58 @@ fn list_directory_contents(path: &str) -> Result<Vec<(String, bool)>, String> {
 
 #[tauri::command]
 async fn generate_ai_text(prompt: &str) -> Result<String, String> {
-    // Get API key from environment variable
-    let api_key = env::var("OPENAI_API_KEY")
-        .map_err(|_| "OPENAI_API_KEY environment variable not set".to_string())?;
-    
     // Create HTTP client
     let client = Client::new();
     
-    // Prepare the request payload
+    // Prepare the request payload for Ollama API
     let payload = serde_json::json!({
-        "model": "gpt-3.5-turbo",
+        "model": "llama3",
         "messages": [
             {
                 "role": "user",
                 "content": prompt
             }
         ],
-        "max_tokens": 1000
+        "stream": false
     });
     
-    // Send request to OpenAI API
+    // Send request to local Ollama API
     let response = client
-        .post("https://api.openai.com/v1/chat/completions")
-        .header("Authorization", format!("Bearer {}", api_key))
+        .post("http://localhost:11434/api/chat")
         .header("Content-Type", "application/json")
         .json(&payload)
         .send()
         .await
-        .map_err(|e| format!("Failed to send request: {}", e))?;
+        .map_err(|e| format!("Failed to send request to Ollama: {}", e))?;
     
     // Check if the response status is successful
     if !response.status().is_success() {
         let status = response.status();
         let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
-        return Err(format!("API request failed with status {}: {}", status, error_text));
+        return Err(format!("Ollama API request failed with status {}: {}", status, error_text));
     }
     
     // Parse response
     let response_json: Value = response
         .json()
         .await
-        .map_err(|e| format!("Failed to parse response JSON: {}", e))?;
+        .map_err(|e| format!("Failed to parse Ollama response JSON: {}", e))?;
     
     // Debug: Print the response for troubleshooting
-    println!("OpenAI API Response: {:?}", response_json);
+    println!("Ollama API Response: {:?}", response_json);
     
     // Extract the generated text with better error handling
     let generated_text = response_json
-        .get("choices")
-        .and_then(|choices| choices.as_array())
-        .and_then(|choices| choices.first())
-        .and_then(|choice| choice.get("message"))
+        .get("message")
         .and_then(|message| message.get("content"))
         .and_then(|content| content.as_str())
         .ok_or_else(|| {
             let error_detail = if let Some(error) = response_json.get("error") {
-                format!("API Error: {:?}", error)
+                format!("Ollama API Error: {:?}", error)
             } else {
-                format!("Unexpected response structure: {:?}", response_json)
+                format!("Unexpected response structure from Ollama: {:?}", response_json)
             };
-            format!("Failed to extract generated text from response. {}", error_detail)
+            format!("Failed to extract generated text from Ollama response. {}", error_detail)
         })?
         .to_string();
     
